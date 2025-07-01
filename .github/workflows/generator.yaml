@@ -1,0 +1,46 @@
+# .github/workflows/main.yml
+name: Generate range of values
+
+on:
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  test_and_report:
+    runs-on: ubuntu-latest
+    # The job status will be 'success' or 'failure' based on the test step.
+    # If tests fail, the job fails, and job.status will reflect that.
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.13'
+
+      - name: Generate values
+        id: run_tests
+        run: |
+          python -m source.py
+
+
+      - name: Trigger service
+        run: |
+          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          JSON_PAYLOAD=$(cat <<EOF
+          "${{ github.repository }}"
+          EOF
+          )
+          echo "Sending JSON Payload:"
+          echo "$JSON_PAYLOAD"
+
+          if [ -z "${{ secrets.SERVICE_URL }}" ]; then
+            echo "secrets.SERVICE_URL not defined, finishing"
+          else
+            curl -X POST \
+                    -H "Content-Type: application/json" \
+                    -H "X-Github-Event: ${{ github.event_name }}" \
+                    -d "$JSON_PAYLOAD" \
+                    "${{ secrets.SERVICE_URL }}"
+          fi

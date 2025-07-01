@@ -28,30 +28,12 @@ jobs:
         run: |
           python -m unittest test.py
 
-      - name: Prepare Webhook Payload
-        id: prepare_payload
-        run: |
-          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          # job.status will be 'success' or 'failure'
-          # steps.run_tests.outcome will be 'success' or 'failure' for the specific test step
-          # We use job.status as the overall indicator.
-          
-          # Note: GitHub Actions variables like job.status are directly available in the `if` condition
-          # and for constructing JSON within the `run` script's `echo` command when properly escaped.
-          # For the payload, we directly use them in the `curl` command's -d argument.
-          echo "Test step outcome: ${{ steps.run_tests.outcome }}"
-          echo "Job status: ${{ job.status }}"
-
-
       - name: Send to Webhook
-        # This step will run even if previous steps (like tests) fail.
+        # This step will run even if previous steps fail.
         # `job.status` will correctly reflect 'failure' if the tests failed.
         if: always()
         run: |
           TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          # Determine overall status based on the test step outcome
-          # If run_tests step failed, job.status will be failure.
-          # If run_tests step succeeded, job.status will be success.
           JSON_PAYLOAD=$(cat <<EOF
           {
             "repository": "${{ github.repository }}",
@@ -63,7 +45,6 @@ jobs:
             "branch_ref": "${{ github.ref }}",
             "actor": "${{ github.actor }}",
             "job_status": "${{ job.status }}",
-            "test_step_outcome": "${{ steps.run_tests.outcome }}",
             "timestamp": "$TIMESTAMP",
             "report_url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           }
@@ -81,9 +62,3 @@ jobs:
                     -d "$JSON_PAYLOAD" \
                     "${{ secrets.WEBHOOK_URL }}"
           fi
-        env:
-          # WEBHOOK_URL must be set as a secret in your GitHub repository settings
-          # Go to Settings > Secrets and variables > Actions > New repository secret
-          # Name: WEBHOOK_URL
-          # Value: Your webhook endpoint (e.g., from webhook.site)
-          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
