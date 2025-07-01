@@ -5,7 +5,7 @@ on:
   workflow_dispatch: # Allows manual triggering
 
 jobs:
-  test_and_report:
+  generate_values:
     runs-on: ubuntu-latest
     # The job status will be 'success' or 'failure' based on the test step.
     # If tests fail, the job fails, and job.status will reflect that.
@@ -20,18 +20,12 @@ jobs:
           python-version: '3.13'
 
       - name: Generate values
-        id: run_tests
+        id: generate_values
         run: |
-          python -m source.py
-
+          echo "json_value=$(python source.py)" >> $GITHUB_OUTPUT
 
       - name: Trigger service
         run: |
-          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          JSON_PAYLOAD=$(cat <<EOF
-          "${{ github.repository }}"
-          EOF
-          )
           echo "Sending JSON Payload:"
           echo "$JSON_PAYLOAD"
 
@@ -44,3 +38,5 @@ jobs:
                     -d "$JSON_PAYLOAD" \
                     "${{ secrets.SERVICE_URL }}"
           fi
+        env:
+          JSON_PAYLOAD: ${{ steps.unit_test_report.outputs.json_value }}
