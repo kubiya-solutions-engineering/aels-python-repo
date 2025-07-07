@@ -12,7 +12,10 @@ class TestSource(unittest.TestCase):
         for _ in range(3):
             with self.subTest():
                 result = get_random_value()
-                self.assertTrue(1_000 <= result <= 9_999, f"Value {result} out of range [1000, 9999]")
+                self.assertTrue(
+                    1_000 <= result <= 9_999,
+                    f"Value {result} out of range [1000, 9999]",
+                )
 
     def test_failing_randomly(self):
         """
@@ -31,4 +34,7 @@ class TestSource(unittest.TestCase):
         for _ in range(3):
             with self.subTest():
                 result = get_random_value()
-                self.assertTrue((1_000 > result) or (result > 9_999), f"Value {result} in range [1000, 9999]")
+                self.assertTrue(
+                    (1_000 > result) or (result > 9_999),
+                    f"Value {result} in range [1000, 9999]",
+                )
